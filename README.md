@@ -72,7 +72,9 @@ git mv "demo page" demo-page
 
 Existing extension work was preserved. The demo is still a static HTML page. It now listens for `change` on `document` so conditional questions work, and it includes a clearly labeled ElderMed sample-controls block for date, checkbox, required, Yes/No, and sensitive-field tests. The CommonHelp-like layout is a local testing replica and is not affiliated with Virginia agencies.
 
-## Required frontend environment variables
+## How to Build
+
+### Step #0: Clone the Repo and copy required frontend environment variables
 
 Copy `frontend/.env.example` to `frontend/.env` before building:
 
@@ -82,7 +84,9 @@ VITE_API_BASE_URL=http://localhost:8000
 
 The frontend must never contain `ELEVENLABS_API_KEY` or `ELEVENLABS_AGENT_ID`. Never prefix those with `VITE_`.
 
-## Required backend environment variables
+### Step #1: Required backend environment variables
+
+ElderMed is built with ElevenLabs API. Enter your API keys and Agent IDs.
 
 Copy `backend/.env.example` to `backend/.env`:
 
@@ -93,15 +97,15 @@ ALLOWED_ORIGINS=http://127.0.0.1:5174,http://localhost:5174
 ENVIRONMENT=development
 ```
 
-## How to obtain the ElevenLabs Agent ID
+### How to obtain the ElevenLabs Agent ID
 
 Open the ElevenLabs Agents dashboard, open your agent, and copy the public Agent ID (`agent_...`). Put it in `backend/.env` as `ELEVENLABS_AGENT_ID`. Configure the two client tools described in `docs/ELEVENLABS_SETUP.md`.
 
-## Where the ElevenLabs API key belongs
+### Where the ElevenLabs API key belongs
 
 Only in `backend/.env` as `ELEVENLABS_API_KEY`. It must never appear in source files, `manifest.json`, Vite variables, browser logs, network responses returned to the extension, compiled JavaScript, `chrome.storage`, or `localStorage`.
 
-## How to run the backend
+### Step #2: How to run the backend
 
 ```bash
 cd backend
@@ -133,7 +137,7 @@ For Mac:
 curl http://localhost:8000/health
 returns `{ "status": "ok" }`.
 
-## How to run the demo page
+### Step #4: How to run the demo page
 
 From `frontend/`:
 
@@ -141,6 +145,7 @@ From `frontend/`:
 cd frontend
 npm run demo
 ```
+**If you get a Python Version Error, change Python into Python3 inside ./frontend/Packages.json**
 
 Or from the repository root:
 
@@ -150,7 +155,7 @@ python -m http.server 5174 --bind 127.0.0.1 --directory demo-page
 
 Open http://127.0.0.1:5174/ . The demo uses port 5174 so it does not collide with the backend on port 8000.
 
-## How to build the extension
+### Step #4: How to build the extension
 
 ```bash
 cd frontend
@@ -162,23 +167,21 @@ npm run build
 
 `npm run dev` starts the CRX development build from `frontend/`.
 
-## How to load the unpacked extension
+### Step #5: Load the unpacked extension
 
 Chrome → `chrome://extensions` → Developer mode → **Load unpacked** → select the **`frontend/dist`** folder.
 
-## How to test the voice assistant
+#### Testing the voice assistant
 
+**You should:**
 1. Start the FastAPI backend on port 8000.
 2. From `frontend/`, run `npm run demo`.
 3. From `frontend/`, run `npm run build` or `npm run dev`.
 4. Load/reload unpacked `frontend/dist`.
 5. Open http://127.0.0.1:5174/ .
-6. Open the floating assistant and press **Start Assistant**.
-7. Ask: “What questions are on this page?”
-8. Confirm `get_current_form` runs, then answer one text question, confirm it, and verify the field.
-9. Answer one Yes/No group and confirm the other group does not change.
-10. Trigger a conditional question and confirm the page is rescanned.
-11. End the conversation and confirm the microphone indicator is gone.
+   
+7. Open the floating assistant and press **Start Assistant**.
+
 
 ## Security limitations
 
