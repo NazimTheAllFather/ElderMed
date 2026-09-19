@@ -114,7 +114,13 @@ For Windows:
 .venv\Scripts\activate
 
 pip install -r requirements.txt
+
+For Windows:
 copy .env.example .env
+
+For Mac:
+cp .env.example .env
+
 # edit .env and set ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID
 python -m uvicorn app.main:app --reload --port 8000
 ```
