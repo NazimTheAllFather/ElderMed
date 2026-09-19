@@ -125,7 +125,13 @@ cp .env.example .env
 python -m uvicorn app.main:app --reload --port 8000
 ```
 
-Confirm `GET http://localhost:8000/health` returns `{ "status": "ok" }`.
+Confirm 
+For Windows:
+`GET http://localhost:8000/health` 
+
+For Mac:
+curl http://localhost:8000/health
+returns `{ "status": "ok" }`.
 
 ## How to run the demo page
 
