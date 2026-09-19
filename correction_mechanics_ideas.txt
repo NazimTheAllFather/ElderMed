@@ -6,3 +6,7 @@ Voice AI, a reprompt will be performed.
 
 Next area of research:
 Integration of Voice AI with chrome extension + the back and forth mechanics. 
+
+
+Which Voice AI?
+Eleven LABs -- It will be API calls
