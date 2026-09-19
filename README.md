@@ -105,7 +105,12 @@ Only in `backend/.env` as `ELEVENLABS_API_KEY`. It must never appear in source f
 
 ```bash
 cd backend
+For Windows: 
 python -m venv .venv
+
+For Mac:
+source .venv/bin/activate
+
 .venv\Scripts\activate
 pip install -r requirements.txt
 copy .env.example .env
