@@ -155,7 +155,7 @@ python -m http.server 5174 --bind 127.0.0.1 --directory demo-page
 
 Open http://127.0.0.1:5174/ . The demo uses port 5174 so it does not collide with the backend on port 8000.
 
-### Step #4: How to build the extension
+### Step #5: How to build the extension
 
 ```bash
 cd frontend
@@ -167,7 +167,7 @@ npm run build
 
 `npm run dev` starts the CRX development build from `frontend/`.
 
-### Step #5: Load the unpacked extension
+### Step #6: Load the unpacked extension
 
 Chrome → `chrome://extensions` → Developer mode → **Load unpacked** → select the **`frontend/dist`** folder.
 
