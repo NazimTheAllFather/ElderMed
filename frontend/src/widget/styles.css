@@ -1,0 +1,207 @@
+:root {
+  color-scheme: light;
+  --bg: transparent;
+  --ink: #1c2a24;
+  --accent: #0f6b5c;
+  --accent-soft: #d7ebe5;
+  --danger: #9b2c2c;
+  --card: #fffdf8;
+  --line: #d5cdc0;
+  --muted: #5c6b64;
+  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.launcher {
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 20px rgba(15, 107, 92, 0.35);
+  position: relative;
+}
+
+/* Red dot shown when the microphone/session is active while minimized (B6). */
+.mic-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 11px;
+  height: 11px;
+  background: #e53e3e;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  animation: mic-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+
+.launcher:focus-visible,
+button:focus-visible {
+  outline: 3px solid #e88b1c;
+  outline-offset: 3px;
+}
+
+.panel {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, #e7f3ef 0%, transparent 45%),
+    linear-gradient(180deg, #f7f3ea 0%, #ebe4d7 100%);
+}
+
+.panel-floating {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(28, 42, 36, 0.2);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: grab;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.status-grid > div,
+.transcript {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.label {
+  display: block;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+
+.pill-connected {
+  background: #d9f5e5;
+  color: #146c43;
+}
+
+.pill-connecting {
+  background: #fff3cd;
+  color: #7a5b00;
+}
+
+.pill-disconnected {
+  background: #eee;
+  color: #555;
+}
+
+.privacy {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--accent);
+  color: white;
+}
+
+button.secondary,
+.icon-button {
+  background: white;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  background: #fdecec;
+  border: 1px solid #f2c6c6;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.error p {
+  margin: 0;
+}
+
+.transcript p {
+  margin: 0;
+  white-space: pre-wrap;
+}

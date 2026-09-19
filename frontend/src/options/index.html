@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ElderMed Permissions</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        padding: 24px;
+        background: #f7f3ea;
+        color: #1c2a24;
+      }
+      button {
+        padding: 10px 16px;
+        font-size: 16px;
+        cursor: pointer;
+        border: 0;
+        border-radius: 8px;
+        background: #0f6b5c;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>ElderMed — Microphone Access</h2>
+    <p>
+      Optional fallback: grant microphone access for this extension origin. The floating assistant
+      and side panel also request permission when you press Start Assistant.
+    </p>
+    <button id="grant-mic" type="button">Enable Microphone</button>
+    <p id="status"></p>
+    <script type="module" src="./options.ts"></script>
+  </body>
+</html>
