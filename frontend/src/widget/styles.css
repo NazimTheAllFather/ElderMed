@@ -8,11 +8,15 @@
   --card: #fffdf8;
   --line: #d5cdc0;
   --muted: #5c6b64;
-  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+  --status-connected: #146c43;
+  --status-connecting: #7a5b00;
+  --status-disconnected: #6b7280;
+  font-family: Arial, "Helvetica Neue", Helvetica, "Segoe UI", sans-serif;
 }
 
 * {
   box-sizing: border-box;
+  font-family: inherit;
 }
 
 html,
@@ -23,31 +27,31 @@ body,
   height: 100%;
   background: transparent;
   color: var(--ink);
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: 17pt;
+  line-height: 1.6;
 }
 
 .launcher {
-  width: 56px;
-  height: 56px;
+  width: 98px;
+  height: 98px;
   border: 0;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
+  border-radius: 0;
+  background: transparent;
   cursor: pointer;
   display: grid;
   place-items: center;
-  box-shadow: 0 8px 20px rgba(15, 107, 92, 0.35);
+  box-shadow: none;
   position: relative;
+  padding: 0;
 }
 
 /* Red dot shown when the microphone/session is active while minimized (B6). */
 .mic-dot {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 11px;
-  height: 11px;
+  top: 6px;
+  right: 6px;
+  width: 13px;
+  height: 13px;
   background: #e53e3e;
   border: 2px solid #fff;
   border-radius: 50%;
@@ -78,7 +82,7 @@ button:focus-visible {
 
 .panel-floating {
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 0px;
   box-shadow: 0 12px 32px rgba(28, 42, 36, 0.2);
 }
 
@@ -92,33 +96,76 @@ button:focus-visible {
 
 .header h1 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 23pt;
+  font-weight: 700;
 }
 
 .subtitle {
   margin: 4px 0 0;
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 17pt;
 }
 
 .status-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
 }
 
-.status-grid > div,
 .transcript {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 0px;
   padding: 10px;
+}
+
+/* Icon-only status indicators: one icon per field (Connection / Assistant / Form),
+   with a small colored dot layered on top to convey state instead of text. */
+.icon-status {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0px;
+  padding: 12px;
+  color: var(--muted);
+}
+
+.status-dot {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  border: 2px solid var(--card);
+}
+
+.icon-status-connected {
+  color: var(--status-connected);
+}
+
+.icon-status-speaking {
+  color: var(--status-connected);
+}
+
+.icon-status-connecting,
+.icon-status-listening {
+  color: var(--status-connecting);
+}
+
+.icon-status-disconnected,
+.icon-status-idle {
+  color: var(--status-disconnected);
 }
 
 .label {
   display: block;
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
+  font-size: 16pt;
+  letter-spacing: 0.02em;
   color: var(--muted);
   margin-bottom: 4px;
 }
@@ -129,7 +176,7 @@ button:focus-visible {
   border-radius: 999px;
   background: var(--accent-soft);
   color: var(--accent);
-  font-size: 0.9rem;
+  font-size: 16pt;
 }
 
 .pill-connected {
@@ -149,22 +196,42 @@ button:focus-visible {
 
 .privacy {
   margin: 0;
-  font-size: 0.92rem;
+  font-size: 16pt;
   color: var(--muted);
 }
 
 .controls {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
 }
+.controls button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 13pt;
+  white-space: nowrap;
+  overflow: hidden;
+}
 
+.controls button svg {
+  flex-shrink: 0;
+}
+
+.controls button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 button {
   border: 0;
-  border-radius: 10px;
+  border-radius: 0px;
   min-height: 44px;
   padding: 10px 14px;
-  font-size: 1rem;
+  font-size: 17pt;
   cursor: pointer;
 }
 
@@ -178,11 +245,17 @@ button.primary {
   color: white;
 }
 
-button.secondary,
+button.secondary {
+  background: white;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
 .icon-button {
   background: white;
   color: var(--ink);
   border: 1px solid var(--line);
+  border-radius: 0;
 }
 
 .error {
@@ -190,11 +263,12 @@ button.secondary,
   color: var(--danger);
   background: #fdecec;
   border: 1px solid #f2c6c6;
-  border-radius: 10px;
+  border-radius: 0px;
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  font-size: 16pt;
 }
 
 .error p {
@@ -204,4 +278,5 @@ button.secondary,
 .transcript p {
   margin: 0;
   white-space: pre-wrap;
+  font-size: 17pt;
 }
