@@ -53,7 +53,9 @@ function handleMessage(
       case MessageType.GET_CURRENT_FORM: {
         const scan = scanForm(document);
         lastPageVersion = scan.page_version;
-        sendResponse(toGetCurrentFormResult(scan, document));
+        const result = toGetCurrentFormResult(scan, document);
+        console.log("[ElderMed] GET_CURRENT_FORM via tab msg →", JSON.stringify(result).slice(0, 400));
+        sendResponse(result);
         return false;
       }
       case MessageType.SET_FORM_ANSWER: {
@@ -75,6 +77,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
 }
 
 if (typeof document !== "undefined" && import.meta.env.MODE !== "test") {
+  console.log("[ElderMed] content script loaded on", location.href);
   const start = (): void => {
     mountAssistantWidget(document);
     observeForm();

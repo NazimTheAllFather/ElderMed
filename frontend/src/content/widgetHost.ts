@@ -34,6 +34,7 @@ function handleToolRequest(
   try {
     if (message.tool === "get_current_form") {
       result = toGetCurrentFormResult(scanForm(documentRef), documentRef);
+      console.log("[ElderMed] get_current_form →", JSON.stringify(result).slice(0, 400));
     } else if (message.tool === "set_form_answer") {
       if (!message.payload) {
         result = toolFailure("INVALID_REQUEST", "set_form_answer requires a payload.");
@@ -86,7 +87,7 @@ export function mountAssistantWidget(documentRef: Document = document): HTMLIFra
   const frame = documentRef.createElement("iframe");
   frame.src = chrome.runtime.getURL("src/widget/index.html");
   frame.title = "ElderMed form assistant";
-  frame.allow = "microphone; autoplay";
+  frame.allow = "microphone; autoplay; screen-wake-lock";
   frame.setAttribute("aria-label", "Open form assistant");
   frame.style.cssText =
     "border: 0; width: 100%; height: 100%; background: transparent; pointer-events: auto; color-scheme: light;";

@@ -30,87 +30,85 @@ import { toolFailure } from "./errors";
  *    when truncated.
  *  - Truncates long question text at MAX_QUESTION_LEN characters.
  */
-const MAX_OPTIONS_RADIO = 5;
-const MAX_QUESTION_LEN = 120;
+/**
+ * Abbreviated key names used in the compact payload.
+ * These are documented in the agent system prompt so the LLM knows what they mean.
+ *
+ *  id  = field_id
+ *  q   = question (truncated)
+ *  t   = type
+ *  r   = required (only present when true)
+ *  cv  = current_value (only present when non-empty)
+ *  o   = options array  (radio/checkbox only; each: {l, id?, sel?})
+ *  ot  = options_total  (select: total count; radio: total when >MAX)
+ *  v   = page_version
+ *
+ * Fields array comes first so the LLM receives field data even if the string
+ * is truncated before the trailing metadata.
+ */
+const MAX_OPTIONS_RADIO = 4;
+const MAX_QUESTION_LEN = 80;
 
-interface SlimOption {
-  option_id: string;
-  label: string;
-  selected?: true;
+interface CompactOption {
+  l: string;         // label
+  id?: string;       // option_id (radio/checkbox only, for use in set_form_answer)
+  sel?: true;        // currently selected
 }
 
-interface SlimField {
-  field_id: string;
-  question: string;
-  type: string;
-  required?: true;
-  current_value?: FormFieldValue;
-  options?: SlimOption[];
-  options_total?: number;
+interface CompactField {
+  id: string;        // field_id
+  q: string;         // question
+  t: string;         // type
+  r?: true;          // required
+  cv?: FormFieldValue; // current_value
+  o?: CompactOption[];
+  ot?: number;       // options_total
 }
 
-interface SlimFormResult {
-  success: true;
-  page_version: string;
-  page_title: string;
-  instructions?: string[];
-  fields: SlimField[];
-  warnings?: Array<{ reason: string; message: string; field_label: string }>;
+interface CompactFormResult {
+  fields: CompactField[];
+  v: string;         // page_version
 }
 
-function slimFormResult(result: GetCurrentFormSuccess): SlimFormResult {
-  const fields: SlimField[] = result.fields.map((field) => {
-    const question =
+function slimFormResult(result: GetCurrentFormSuccess): CompactFormResult {
+  const fields: CompactField[] = result.fields.map((field) => {
+    const q =
       field.question.length > MAX_QUESTION_LEN
         ? field.question.slice(0, MAX_QUESTION_LEN - 1) + "…"
         : field.question;
 
-    const slim: SlimField = {
-      field_id: field.field_id,
-      question,
-      type: field.type,
-    };
+    const slim: CompactField = { id: field.field_id, q, t: field.type };
 
-    if (field.required) slim.required = true;
+    if (field.required) slim.r = true;
 
     const cv = field.current_value;
     if (cv !== null && cv !== "" && cv !== false && !(Array.isArray(cv) && cv.length === 0)) {
-      slim.current_value = cv;
+      slim.cv = cv;
     }
 
     if (field.options?.length) {
       const total = field.options.length;
       if (field.type === "select") {
-        // Omit options for dropdowns entirely. The form-filler matches the
-        // user's spoken answer against the live DOM — the agent does not need
-        // option_ids. Only send the count so the agent knows to ask freely.
-        slim.options_total = total;
+        // No options sent for dropdowns — agent asks user to speak freely,
+        // form-filler matches the spoken answer against the live DOM.
+        slim.ot = total;
       } else {
-        // radio / checkbox: agent must read choices aloud, so include labels.
+        // radio / checkbox: agent reads choices aloud.
         const visible = field.options.slice(0, MAX_OPTIONS_RADIO);
-        slim.options = visible.map((opt) => {
-          const o: SlimOption = { option_id: opt.option_id, label: opt.label };
-          if (opt.selected) o.selected = true;
+        slim.o = visible.map((opt) => {
+          const o: CompactOption = { l: opt.label, id: opt.option_id };
+          if (opt.selected) o.sel = true;
           return o;
         });
-        if (total > MAX_OPTIONS_RADIO) {
-          slim.options_total = total;
-        }
+        if (total > MAX_OPTIONS_RADIO) slim.ot = total;
       }
     }
 
     return slim;
   });
 
-  const slimResult: SlimFormResult = {
-    success: true,
-    page_version: result.page_version,
-    page_title: result.page_title,
-    fields,
-  };
-  if (result.instructions?.length) slimResult.instructions = result.instructions;
-  if (result.warnings?.length) slimResult.warnings = result.warnings;
-  return slimResult;
+  // Fields array first so the LLM receives field data even under aggressive truncation.
+  return { fields, v: result.page_version };
 }
 
 /**
@@ -171,28 +169,38 @@ async function setFormAnswerResult(
 export function createFormClientTools(getTabId?: () => number | null) {
   return {
     get_current_form: async (): Promise<string> => {
+      console.log("[ElderMed] client tool get_current_form called by ElevenLabs AI");
       try {
-        return asSlimFormPayload(await getCurrentFormResult(getTabId?.() ?? null));
-      } catch {
-        return JSON.stringify(
+        const payload = asSlimFormPayload(await getCurrentFormResult(getTabId?.() ?? null));
+        console.log("[ElderMed] get_current_form → returning to AI:", payload.slice(0, 300));
+        return payload;
+      } catch (err) {
+        const failure = JSON.stringify(
           toolFailure(
             "CONTENT_SCRIPT_UNAVAILABLE",
             "The form page is not connected to the extension.",
           ),
         );
+        console.warn("[ElderMed] get_current_form failed:", err, "→ returning:", failure);
+        return failure;
       }
     },
 
     set_form_answer: async (parameters: Record<string, unknown>): Promise<string> => {
+      console.log("[ElderMed] client tool set_form_answer called by ElevenLabs AI, params:", parameters);
       try {
-        return asToolPayload(await setFormAnswerResult(parameters, getTabId?.() ?? null));
-      } catch {
-        return asToolPayload(
+        const result = asToolPayload(await setFormAnswerResult(parameters, getTabId?.() ?? null));
+        console.log("[ElderMed] set_form_answer → returning to AI:", result);
+        return result;
+      } catch (err) {
+        const failure = asToolPayload(
           toolFailure(
             "CONTENT_SCRIPT_UNAVAILABLE",
             "The form page is not connected to the extension.",
           ),
         );
+        console.warn("[ElderMed] set_form_answer failed:", err, "→ returning:", failure);
+        return failure;
       }
     },
   };

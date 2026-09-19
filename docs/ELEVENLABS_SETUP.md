@@ -27,7 +27,19 @@ None
 Wait for response / Block conversation:
 Enabled
 
-The tool returns a JSON snapshot of the visible form, or a structured failure such as `NO_SUPPORTED_FORM`, `NO_FORM_FIELDS`, `CONTENT_SCRIPT_UNAVAILABLE`, `NO_ACTIVE_TAB`, `UNSUPPORTED_PAGE`, or `PAGE_SCAN_FAILED`.
+The tool returns a compact JSON snapshot of the visible form fields. Keys use short names to minimize size:
+
+- `v` — page version (pass back as `page_version` in `set_form_answer`)
+- `fields` — array of fields, each with:
+  - `id` — field_id (pass as `field_id` in `set_form_answer`)
+  - `q` — question text
+  - `t` — field type: `text`, `textarea`, `radio`, `checkbox`, `select`, `date`, `number`, `email`, `tel`
+  - `r` — present and `true` when the field is required
+  - `cv` — current value (only present when already filled)
+  - `o` — options array for radio/checkbox: `[{id, l, sel?}]` where `id`=option_id, `l`=label, `sel`=selected
+  - `ot` — total option count (for select/dropdown fields or truncated radio lists)
+
+On failure the tool returns a JSON object with `success: false` and an `error` code such as `NO_SUPPORTED_FORM`, `NO_FORM_FIELDS`, `CONTENT_SCRIPT_UNAVAILABLE`, `NO_ACTIVE_TAB`, `UNSUPPORTED_PAGE`, or `PAGE_SCAN_FAILED`.
 
 ## Tool 2
 

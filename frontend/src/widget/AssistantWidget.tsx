@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ConversationProvider, useConversation } from "@elevenlabs/react";
+import { ConversationProvider, useConversation, useConversationClientTool } from "@elevenlabs/react";
 import { WIDGET_MESSAGE_SOURCE, type WidgetToHostMessage } from "../shared/types";
 import { createFormClientTools, getApiBaseUrl, probeFormConnection } from "../shared/formTools";
 import { getActiveTab } from "../shared/tabMessaging";
@@ -48,14 +48,10 @@ export interface AssistantWidgetProps {
   variant: "floating" | "sidepanel";
 }
 
-type ClientTools = ReturnType<typeof createFormClientTools>;
-
 function ConversationPanel({
   variant,
-  clientTools,
   boundTabIdRef,
 }: AssistantWidgetProps & {
-  clientTools: ClientTools;
   boundTabIdRef: React.MutableRefObject<number | null>;
 }) {
   const apiBaseUrl = getApiBaseUrl();
@@ -207,14 +203,12 @@ function ConversationPanel({
           conversationToken: session.credentials.conversation_token,
           connectionType: "webrtc",
           workletPaths,
-          clientTools,
         });
       } else if (session.credentials.signed_url) {
         conversationRef.current.startSession({
           signedUrl: session.credentials.signed_url,
           connectionType: "websocket",
           workletPaths,
-          clientTools,
         });
       } else {
         throw new Error("No conversation credential was returned.");
@@ -226,7 +220,7 @@ function ConversationPanel({
     } finally {
       setBusy(false);
     }
-  }, [apiBaseUrl, clientTools, boundTabIdRef]);
+  }, [apiBaseUrl, boundTabIdRef]);
 
   const endAssistant = useCallback(() => {
     setBusy(true);
@@ -383,6 +377,13 @@ function ConversationPanel({
   );
 }
 
+function FormToolsRegistrar({ getTabId }: { getTabId: () => number | null }) {
+  const tools = useMemo(() => createFormClientTools(getTabId), [getTabId]);
+  useConversationClientTool("get_current_form", tools.get_current_form);
+  useConversationClientTool("set_form_answer", tools.set_form_answer);
+  return null;
+}
+
 function FormToolsProvider({
   variant,
   children,
@@ -390,15 +391,12 @@ function FormToolsProvider({
   variant: AssistantWidgetProps["variant"];
   children?: ReactNode;
 }) {
-  // Stores the tab ID captured at session start (side-panel path only).
-  // The floating-widget path is already bound to the host document via the
-  // iframe postMessage bridge and does not use this ref.
   const boundTabIdRef = useRef<number | null>(null);
   const getTabId = useCallback(() => boundTabIdRef.current, []);
-  const clientTools = useMemo(() => createFormClientTools(getTabId), [getTabId]);
   return (
-    <ConversationProvider clientTools={clientTools}>
-      <ConversationPanel variant={variant} clientTools={clientTools} boundTabIdRef={boundTabIdRef} />
+    <ConversationProvider>
+      <FormToolsRegistrar getTabId={getTabId} />
+      <ConversationPanel variant={variant} boundTabIdRef={boundTabIdRef} />
       {children}
     </ConversationProvider>
   );
