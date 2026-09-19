@@ -58,14 +58,31 @@ function resolveOption(
     return { option: exact };
   }
 
-  const matches = field.options.filter((o) => normalize(o.label) === normalize(params.answer));
-  if (matches.length > 1) {
-    return {
-      option: null,
-      error: toolFailure("AMBIGUOUS_OPTION", "Multiple options match that answer for this field."),
-    };
+  const ans = normalize(params.answer);
+  const labeled = field.options.filter((o) => normalize(o.label).length > 0);
+
+  // 1. Exact match after normalization
+  const exact = labeled.filter((o) => normalize(o.label) === ans);
+  if (exact.length > 1) {
+    return { option: null, error: toolFailure("AMBIGUOUS_OPTION", "Multiple options match that answer for this field.") };
   }
-  if (matches.length === 1) return { option: matches[0] };
+  if (exact.length === 1) return { option: exact[0] };
+
+  // 2. Fuzzy: the option label appears inside the user's answer (e.g. "i'm married" → "Married")
+  const labelInAnswer = labeled.filter((o) => ans.includes(normalize(o.label)) && normalize(o.label).length > 1);
+  if (labelInAnswer.length === 1) {
+    console.log("[ElderMed] fuzzy match (label-in-answer):", labelInAnswer[0].label, "for answer:", params.answer);
+    return { option: labelInAnswer[0] };
+  }
+
+  // 3. Fuzzy: the user's answer appears inside the option label (e.g. "single" → "Single person")
+  const answerInLabel = labeled.filter((o) => normalize(o.label).includes(ans) && ans.length > 1);
+  if (answerInLabel.length === 1) {
+    console.log("[ElderMed] fuzzy match (answer-in-label):", answerInLabel[0].label, "for answer:", params.answer);
+    return { option: answerInLabel[0] };
+  }
+
+  console.warn("[ElderMed] OPTION_NOT_FOUND: answer", JSON.stringify(params.answer), "options:", labeled.map((o) => o.label));
   return {
     option: null,
     error: toolFailure("OPTION_NOT_FOUND", "No option on this field matches the requested answer."),
@@ -194,11 +211,13 @@ export function setFormAnswer(
 
   const before = scanForm(documentRef);
   if (before.page_version !== params.page_version) {
+    console.warn("[ElderMed] STALE_PAGE_VERSION: received", params.page_version, "current", before.page_version);
     return toolFailure("STALE_PAGE_VERSION", "The form changed. Read the page again.");
   }
 
   const field = before.localMap.get(params.field_id);
   if (!field) {
+    console.warn("[ElderMed] FIELD_NOT_FOUND: field_id", params.field_id, "not in localMap. Available:", [...before.localMap.keys()]);
     return toolFailure("FIELD_NOT_FOUND", "Unknown field_id for the current page.");
   }
 
@@ -225,13 +244,16 @@ export function setFormAnswer(
     return toolFailure("UNSUPPORTED_FIELD_TYPE", "This control type cannot be filled automatically.");
   }
 
+  console.log("[ElderMed] setFormAnswer: field", params.field_id, "type", field.type, "answer", params.answer, "option_id", params.option_id);
   let expectedLabel: string;
   try {
     expectedLabel = applyToField(field, params);
   } catch (err) {
     if (err && typeof err === "object" && "success" in err && (err as SetFormAnswerResult).success === false) {
+      console.warn("[ElderMed] applyToField error:", err);
       return err as SetFormAnswerResult;
     }
+    console.warn("[ElderMed] applyToField threw:", err);
     return toolFailure("UPDATE_FAILED", "The DOM update could not be applied.");
   }
 
@@ -243,6 +265,7 @@ export function setFormAnswer(
     return toolFailure("VERIFICATION_FAILED", "Field disappeared after update.");
   }
   const verified = verifiedValueToString(readCurrentValue(updated), expectedLabel);
+  console.log("[ElderMed] verification: expected", expectedLabel, "answer", params.answer, "actual", verified);
   if (!valuesMatch(expectedLabel, verified) && !valuesMatch(params.answer, verified)) {
     if (
       !(
@@ -253,6 +276,7 @@ export function setFormAnswer(
           .includes(normalize(expectedLabel))
       )
     ) {
+      console.warn("[ElderMed] VERIFICATION_FAILED: expected", expectedLabel, "but DOM has", verified);
       return toolFailure(
         "VERIFICATION_FAILED",
         "The requested value did not remain selected or entered.",

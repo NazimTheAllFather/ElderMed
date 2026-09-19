@@ -207,10 +207,14 @@ export function createFormClientTools(
     },
 
     set_form_answer: async (parameters: Record<string, unknown>): Promise<string> => {
-      console.log("[ElderMed] client tool set_form_answer called by ElevenLabs AI, params:", parameters);
+      // ElevenLabs may send parameter keys with leading/trailing whitespace if the
+      // tool definition identifier has accidental spaces. Normalize them here.
+      const normalized: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(parameters)) normalized[k.trim()] = v;
+      console.log("[ElderMed] client tool set_form_answer called, raw keys:", Object.keys(parameters), "normalized:", normalized);
       onFilling?.();
       try {
-        const result = asToolPayload(await setFormAnswerResult(parameters, getTabId?.() ?? null));
+        const result = asToolPayload(await setFormAnswerResult(normalized, getTabId?.() ?? null));
         console.log("[ElderMed] set_form_answer → returning to AI:", result);
         onFilled?.();
         return result;

@@ -39,7 +39,9 @@ function handleToolRequest(
       if (!message.payload) {
         result = toolFailure("INVALID_REQUEST", "set_form_answer requires a payload.");
       } else {
+        console.log("[ElderMed] widgetHost set_form_answer payload:", message.payload);
         result = setFormAnswer(message.payload, documentRef);
+        console.log("[ElderMed] widgetHost set_form_answer result:", result);
       }
     } else {
       result = toolFailure("INVALID_REQUEST", "Unsupported tool request.");
