@@ -160,7 +160,8 @@ Open http://127.0.0.1:5174/ . The demo uses port 5174 so it does not collide wit
 ```bash
 cd frontend
 npm install
-copy .env.example .env
+
+copy .env.example .env (remember! cp for Mac)
 # VITE_API_BASE_URL defaults to http://localhost:8000
 npm run build
 ```
