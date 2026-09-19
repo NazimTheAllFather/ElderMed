@@ -129,10 +129,18 @@ function optionLabelForInput(input: HTMLInputElement, documentRef: Document): st
     if (text) return text;
   }
   if (input.id) {
-    const label = documentRef.querySelector(`label[for="${cssEscape(input.id)}"]`);
-    if (label) return normalizeText(label.textContent);
+    // Multiple labels can share the same for= attribute (e.g. an empty spacer label
+    // followed by the real label). Pick the first one with non-empty text.
+    const labels = documentRef.querySelectorAll(`label[for="${cssEscape(input.id)}"]`);
+    for (const label of Array.from(labels)) {
+      const text = normalizeText(label.textContent);
+      if (text) return text;
+    }
   }
-  return normalizeText(input.value || input.getAttribute("aria-label") || "Option");
+  // Fall back to the input's own title, then aria-label, then value.
+  const title = input.getAttribute("title");
+  if (title && normalizeText(title)) return normalizeText(title);
+  return normalizeText(input.getAttribute("aria-label") || input.value || "Option");
 }
 
 export function readCurrentValue(field: LocalFieldRef): FormFieldValue {

@@ -31,7 +31,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/index.ts-loader-Ct8QTh9e.js"
+        "assets/index.ts-loader-Duz41FLq.js"
       ],
       "matches": [
         "http://*/*",
@@ -52,8 +52,8 @@
         "assets/*",
         "assets/errors-DsV2-bgI.js",
         "assets/errors-DsV2-bgI.js.map",
-        "assets/index.ts-B6VDlAyP.js",
-        "assets/index.ts-B6VDlAyP.js.map"
+        "assets/index.ts-CrYM9Mg4.js",
+        "assets/index.ts-CrYM9Mg4.js.map"
       ],
       "use_dynamic_url": false
     }

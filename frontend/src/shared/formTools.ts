@@ -47,6 +47,7 @@ import { toolFailure } from "./errors";
  * is truncated before the trailing metadata.
  */
 const MAX_OPTIONS_RADIO = 4;
+const MAX_OPTIONS_SELECT = 30; // send up to this many dropdown options; capped to avoid payload overflow on large lists
 const MAX_QUESTION_LEN = 80;
 
 interface CompactOption {
@@ -103,7 +104,18 @@ function slimFormResult(result: GetCurrentFormSuccess): CompactFormResult {
     if (field.options?.length) {
       const total = field.options.length;
       if (field.type === "select") {
-        slim.ot = total;
+        // Strip placeholder options (empty text, "--", "Select...", etc.)
+        const labeled = field.options.filter((opt) => !isPlaceholderValue(opt.label));
+        const visible = labeled.slice(0, MAX_OPTIONS_SELECT);
+        if (visible.length > 0) {
+          slim.o = visible.map((opt) => {
+            const o: CompactOption = { l: opt.label, option_id: opt.option_id };
+            if (opt.selected) o.sel = true;
+            return o;
+          });
+        }
+        // Always include ot so the AI knows if there are more options not listed.
+        slim.ot = labeled.length || total;
       } else {
         // radio / checkbox: filter empty-label options (decorative/hidden inputs).
         // If ALL options have empty labels the field has no speakable choices —
