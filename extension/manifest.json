@@ -1,0 +1,1 @@
+{"manifest_version":3,"name":"ElderMed Voice Form Tools — Demo","version":"0.2.0","description":"Voice-agent driven structured form actions on the local About You demo.","permissions":["activeTab","scripting","offscreen","storage"],"background":{"service_worker":"background.js"},"action":{"default_popup":"popup.html"},"options_page":"options.html"}
