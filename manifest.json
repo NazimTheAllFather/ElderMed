@@ -1,10 +1,15 @@
 {
-    "name": "Blank Extensions",
-    "description": "Base Level Extension",
-    "version": "1.0",
-    "manifest_version": 3,
-    "action": {
-      "default_popup": "hello.html",
-      "default_icon": "icon.png"
-    }
-  }
+  "manifest_version": 3,
+  "name": "Voice AI Extension",
+  "version": "1.0",
+  "permissions": [
+    "offscreen"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Voice AI Extension"
+  },
+  "options_page": "options.html"
+}
