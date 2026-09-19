@@ -51,8 +51,10 @@ export interface AssistantWidgetProps {
 function ConversationPanel({
   variant,
   boundTabIdRef,
+  fillingStatus,
 }: AssistantWidgetProps & {
   boundTabIdRef: React.MutableRefObject<number | null>;
+  fillingStatus: string | null;
 }) {
   const apiBaseUrl = getApiBaseUrl();
   const [expanded, setExpanded] = useState(variant === "sidepanel");
@@ -371,14 +373,25 @@ function ConversationPanel({
 
       <section className="transcript">
         <span className="label">Status / last transcript</span>
-        <p>{lastTranscript || conversation.message || statusMessage}</p>
+        <p>{fillingStatus || lastTranscript || conversation.message || statusMessage}</p>
       </section>
     </div>
   );
 }
 
-function FormToolsRegistrar({ getTabId }: { getTabId: () => number | null }) {
-  const tools = useMemo(() => createFormClientTools(getTabId), [getTabId]);
+function FormToolsRegistrar({
+  getTabId,
+  onFilling,
+  onFilled,
+}: {
+  getTabId: () => number | null;
+  onFilling: () => void;
+  onFilled: () => void;
+}) {
+  const tools = useMemo(
+    () => createFormClientTools(getTabId, onFilling, onFilled),
+    [getTabId, onFilling, onFilled],
+  );
   useConversationClientTool("get_current_form", tools.get_current_form);
   useConversationClientTool("set_form_answer", tools.set_form_answer);
   return null;
@@ -393,10 +406,13 @@ function FormToolsProvider({
 }) {
   const boundTabIdRef = useRef<number | null>(null);
   const getTabId = useCallback(() => boundTabIdRef.current, []);
+  const [fillingStatus, setFillingStatus] = useState<string | null>(null);
+  const onFilling = useCallback(() => setFillingStatus("Filling field…"), []);
+  const onFilled = useCallback(() => setFillingStatus(null), []);
   return (
     <ConversationProvider>
-      <FormToolsRegistrar getTabId={getTabId} />
-      <ConversationPanel variant={variant} boundTabIdRef={boundTabIdRef} />
+      <FormToolsRegistrar getTabId={getTabId} onFilling={onFilling} onFilled={onFilled} />
+      <ConversationPanel variant={variant} boundTabIdRef={boundTabIdRef} fillingStatus={fillingStatus} />
       {children}
     </ConversationProvider>
   );

@@ -31,17 +31,17 @@ import { toolFailure } from "./errors";
  *  - Truncates long question text at MAX_QUESTION_LEN characters.
  */
 /**
- * Abbreviated key names used in the compact payload.
- * These are documented in the agent system prompt so the LLM knows what they mean.
+ * Compact payload key names. field_id and page_version use their full names so
+ * the AI can pass them directly to set_form_answer without any mental mapping.
  *
- *  id  = field_id
- *  q   = question (truncated)
- *  t   = type
- *  r   = required (only present when true)
- *  cv  = current_value (only present when non-empty)
- *  o   = options array  (radio/checkbox only; each: {l, id?, sel?})
- *  ot  = options_total  (select: total count; radio: total when >MAX)
- *  v   = page_version
+ *  field_id     = pass as field_id in set_form_answer
+ *  page_version = pass as page_version in set_form_answer
+ *  q            = question (truncated)
+ *  t            = type
+ *  r            = required (only present when true)
+ *  cv           = current_value (only present when non-empty)
+ *  o            = options array  (radio/checkbox only; each: {l, option_id?, sel?})
+ *  ot           = options_total  (select: total count; radio: total when >MAX)
  *
  * Fields array comes first so the LLM receives field data even if the string
  * is truncated before the trailing metadata.
@@ -51,12 +51,12 @@ const MAX_QUESTION_LEN = 80;
 
 interface CompactOption {
   l: string;         // label
-  id?: string;       // option_id (radio/checkbox only, for use in set_form_answer)
+  option_id?: string; // option_id (radio/checkbox only, for use in set_form_answer)
   sel?: true;        // currently selected
 }
 
 interface CompactField {
-  id: string;        // field_id
+  field_id: string;  // pass as field_id in set_form_answer
   q: string;         // question
   t: string;         // type
   r?: true;          // required
@@ -67,48 +67,64 @@ interface CompactField {
 
 interface CompactFormResult {
   fields: CompactField[];
-  v: string;         // page_version
+  page_version: string; // pass as page_version in set_form_answer
+}
+
+function isPlaceholderValue(cv: FormFieldValue): boolean {
+  if (cv === null || cv === "" || cv === false) return true;
+  if (Array.isArray(cv) && cv.length === 0) return true;
+  // Dropdown placeholder strings like "--", "---", "Select...", "Choose one"
+  if (typeof cv === "string") {
+    const t = cv.trim();
+    if (/^-+$/.test(t)) return true; // "--", "---", etc.
+    if (/^(select|choose|pick)\b/i.test(t)) return true;
+  }
+  return false;
 }
 
 function slimFormResult(result: GetCurrentFormSuccess): CompactFormResult {
-  const fields: CompactField[] = result.fields.map((field) => {
+  const fields: CompactField[] = [];
+
+  for (const field of result.fields) {
     const q =
       field.question.length > MAX_QUESTION_LEN
         ? field.question.slice(0, MAX_QUESTION_LEN - 1) + "…"
         : field.question;
 
-    const slim: CompactField = { id: field.field_id, q, t: field.type };
+    const slim: CompactField = { field_id: field.field_id, q, t: field.type };
 
     if (field.required) slim.r = true;
 
     const cv = field.current_value;
-    if (cv !== null && cv !== "" && cv !== false && !(Array.isArray(cv) && cv.length === 0)) {
+    if (!isPlaceholderValue(cv)) {
       slim.cv = cv;
     }
 
     if (field.options?.length) {
       const total = field.options.length;
       if (field.type === "select") {
-        // No options sent for dropdowns — agent asks user to speak freely,
-        // form-filler matches the spoken answer against the live DOM.
         slim.ot = total;
       } else {
-        // radio / checkbox: agent reads choices aloud.
-        const visible = field.options.slice(0, MAX_OPTIONS_RADIO);
+        // radio / checkbox: filter empty-label options (decorative/hidden inputs).
+        // If ALL options have empty labels the field has no speakable choices —
+        // skip it entirely so the LLM is not confused by a radio with no options.
+        const labeled = field.options.filter((opt) => opt.label.trim() !== "");
+        if (labeled.length === 0) continue; // skip this field
+        const visible = labeled.slice(0, MAX_OPTIONS_RADIO);
         slim.o = visible.map((opt) => {
-          const o: CompactOption = { l: opt.label, id: opt.option_id };
+          const o: CompactOption = { l: opt.label, option_id: opt.option_id };
           if (opt.selected) o.sel = true;
           return o;
         });
-        if (total > MAX_OPTIONS_RADIO) slim.ot = total;
+        if (labeled.length > MAX_OPTIONS_RADIO) slim.ot = labeled.length;
       }
     }
 
-    return slim;
-  });
+    fields.push(slim);
+  }
 
   // Fields array first so the LLM receives field data even under aggressive truncation.
-  return { fields, v: result.page_version };
+  return { fields, page_version: result.page_version };
 }
 
 /**
@@ -166,13 +182,17 @@ async function setFormAnswerResult(
  *                  The floating-widget path is already bound to the host document and
  *                  does not need this.
  */
-export function createFormClientTools(getTabId?: () => number | null) {
+export function createFormClientTools(
+  getTabId?: () => number | null,
+  onFilling?: () => void,
+  onFilled?: () => void,
+) {
   return {
     get_current_form: async (): Promise<string> => {
       console.log("[ElderMed] client tool get_current_form called by ElevenLabs AI");
       try {
         const payload = asSlimFormPayload(await getCurrentFormResult(getTabId?.() ?? null));
-        console.log("[ElderMed] get_current_form → returning to AI:", payload.slice(0, 300));
+        console.log("[ElderMed] get_current_form → returning to AI:", payload);
         return payload;
       } catch (err) {
         const failure = JSON.stringify(
@@ -188,9 +208,11 @@ export function createFormClientTools(getTabId?: () => number | null) {
 
     set_form_answer: async (parameters: Record<string, unknown>): Promise<string> => {
       console.log("[ElderMed] client tool set_form_answer called by ElevenLabs AI, params:", parameters);
+      onFilling?.();
       try {
         const result = asToolPayload(await setFormAnswerResult(parameters, getTabId?.() ?? null));
         console.log("[ElderMed] set_form_answer → returning to AI:", result);
+        onFilled?.();
         return result;
       } catch (err) {
         const failure = asToolPayload(
@@ -200,6 +222,7 @@ export function createFormClientTools(getTabId?: () => number | null) {
           ),
         );
         console.warn("[ElderMed] set_form_answer failed:", err, "→ returning:", failure);
+        onFilled?.();
         return failure;
       }
     },
