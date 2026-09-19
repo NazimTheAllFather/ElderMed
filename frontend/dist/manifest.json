@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "name": "ElderMed Voice Assistant",
+  "version": "1.0.0",
+  "description": "Speak with an ElevenLabs agent that can read and fill the current page form, one confirmed answer at a time.",
+  "permissions": [
+    "sidePanel",
+    "tabs",
+    "scripting",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*",
+    "https://*.elevenlabs.io/*",
+    "https://api.elevenlabs.io/*",
+    "https://*.livekit.cloud/*",
+    "wss://*.livekit.cloud/*"
+  ],
+  "background": {
+    "service_worker": "service-worker-loader.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "ElderMed Voice Assistant"
+  },
+  "side_panel": {
+    "default_path": "src/sidepanel/index.html"
+  },
+  "options_page": "src/options/index.html",
+  "content_scripts": [
+    {
+      "js": [
+        "assets/index.ts-loader-CDMWE4eN.js"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "resources": [
+        "src/widget/index.html",
+        "elevenlabs-worklets/*",
+        "assets/*",
+        "assets/errors-DsV2-bgI.js",
+        "assets/errors-DsV2-bgI.js.map",
+        "assets/index.ts-BXOjzs7U.js",
+        "assets/index.ts-BXOjzs7U.js.map"
+      ],
+      "use_dynamic_url": false
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 https://*.elevenlabs.io wss://*.elevenlabs.io https://api.elevenlabs.io wss://api.elevenlabs.io https://*.livekit.cloud wss://*.livekit.cloud"
+  }
+}

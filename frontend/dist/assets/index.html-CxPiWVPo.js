@@ -1,0 +1,2 @@
+import"./modulepreload-polyfill-B5Qt9EMX.js";const c=document.getElementById("grant-mic"),e=document.getElementById("status");c==null||c.addEventListener("click",async()=>{if(e)try{(await navigator.mediaDevices.getUserMedia({audio:!0})).getTracks().forEach(s=>s.stop()),e.textContent="Microphone access granted. You can close this tab.",e.style.color="#146c43"}catch(t){const s=t instanceof Error?t.message:"Permission denied";e.textContent=`Permission denied: ${s}`,e.style.color="#9b2c2c"}});
+//# sourceMappingURL=index.html-CxPiWVPo.js.map
