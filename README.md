@@ -1,4 +1,4 @@
-# ElderMed
+![Logo](./transparent-logo.png)
 
 ElderMed is a Chrome Manifest V3 extension that helps older adults complete complicated web forms through a live ElevenLabs voice assistant. A content script reads the visible form, a floating in-page widget starts the conversation, and the agent fills fields only after the user confirms each answer.
 
